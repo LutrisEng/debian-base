@@ -27,7 +27,9 @@ RUN mkdir /debian
 ARG FLAVOR=bullseye
 RUN --mount=type=cache,id=stage1-debootstrap-apt-cache,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,id=stage1-debootstrap-apt-lib,sharing=locked,target=/var/lib/apt \
-    debootstrap --variant=minbase ${FLAVOR} /debian http://deb.debian.org/debian/
+    debootstrap \
+    --include=build-essential,curl,apt-transport-https,ruby,bundler,ruby-foreman,file,neovim,gzip,nodejs,git,postgresql-client,libsqlite3-0 \
+    ${FLAVOR} /debian http://deb.debian.org/debian/
 
 FROM scratch AS debian-base
 
