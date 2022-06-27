@@ -12,6 +12,7 @@ on:
 jobs:
   debian:
     strategy:
+      fail-fast: false
       matrix:
         flavor: [bullseye, bookworm]
     name: Debian ${{ matrix.flavor }}
