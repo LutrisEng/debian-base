@@ -64,5 +64,5 @@ jobs:
           labels: ${{ steps.docker_metadata.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args:
-            - FLAVOR=${{ matrix.flavor }}
+          build-args: |
+            FLAVOR=${{ matrix.flavor }}
