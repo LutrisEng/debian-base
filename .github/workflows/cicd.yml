@@ -1,0 +1,66 @@
+
+name: "CI/CD"
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  release:
+    types: [ "published" ]
+jobs:
+  debian:
+    strategy:
+      matrix:
+        flavor: [bullseye, bookworm]
+    name: Debian ${{ matrix.flavor }}
+    runs-on: ubuntu-22.04
+    concurrency:
+      group: "docker_${{ github.event_name == 'pull_request' && format('pr_{0}', github.event.number) || format('ref_{0}', github.ref) }}"
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.0.0
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2.0.0
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate imagedate.txt
+        run: make imagedate.txt
+      - name: Set Docker Metadata
+        id: docker_metadata
+        uses: docker/metadata-action@v4.0.1
+        with:
+          images: |
+            ghcr.io/lutriseng/debian-base/${{ matrix.flavor }}
+          tags: |
+            type=schedule
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.description=Lutris's base image for Debian ${{ matrix.flavor }}
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v3.0.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker_metadata.outputs.tags }}
+          labels: ${{ steps.docker_metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args:
+            FLAVOR: ${{ matrix.flavor }}
