@@ -17,7 +17,7 @@ jobs:
     name: Debian ${{ matrix.flavor }}
     runs-on: ubuntu-22.04
     concurrency:
-      group: "docker_${{ github.event_name == 'pull_request' && format('pr_{0}', github.event.number) || format('ref_{0}', github.ref) }}"
+      group: "docker_${{ matrix.flavor }}_${{ github.event_name == 'pull_request' && format('pr_{0}', github.event.number) || format('ref_{0}', github.ref) }}"
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout code
